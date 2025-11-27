@@ -1,13 +1,13 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import mongoose, { Schema } from "mongoose";
 
-interface TokenPayload extends JwtPayload {
-    id: string;
-    email: string;
-    username: string;   
-}
+// interface TokenPayload extends JwtPayload {
+//     id: string;
+//     email: string;
+//     username: string;   
+// }
 
 const userSchema = new Schema({
     avatar: {
@@ -75,29 +75,28 @@ userSchema.methods.isPasswordCorrect = async function (password: string) {
 }
 
 userSchema.methods.generateAccessToken = async function () {
-    return jwt.sign(
-        {
-            id: this._id,
-            email: this.email,
-            username: this.username
-        },
-        process.env.ACCESS_TOKEN_SECRET as string,
-        { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '15m' }
-    )
-}
-
-userSchema.methods.generateRefreshToken = async function () {
-    const payload: TokenPayload = {
+    const options: SignOptions = {
+        expiresIn: (process.env.ACCESS_TOKEN_EXPIRY || '15m') as any
+    }
+    return jwt.sign({
         id: this._id,
         email: this.email,
         username: this.username
-    }
-
+        }, process.env.ACCESS_TOKEN_SECRET || '5m',
+        options
+    )
+}
+// Check the expiry time format and secret key for refresh token
+userSchema.methods.generateRefreshToken = async function () {
     const options: SignOptions = {
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '15m',
+        expiresIn: (process.env.REFRESH_TOKEN_EXPIRY || '15m') as any
     }
-    return jwt.sign(
-        payload, process.env.REFRESH_TOKEN_SECRET!, options
+    return jwt.sign({
+        id: this._id,
+        email: this.email,
+        username: this.username
+    },  process.env.REFRESH_TOKEN_SECRET || '7d',
+        options
     )
 }
 
