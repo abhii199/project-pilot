@@ -1,13 +1,14 @@
-import { NextFunction, Response } from "express";
+import { NextFunction, Request, Response } from "express";
+import { ZodObject, ZodRawShape } from "zod";
 import { ApiError } from "../utils/api.Error";
-import { userRegistrationValidator } from "../validators";
 
-
-export const validateRegisterUser = (req: Request, res: Response, next: NextFunction) => {
-    const result = userRegistrationValidator.safeParse(req.body);
+export const validate = (schema: ZodObject<ZodRawShape>) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.body);
     if (!result.success) {
-        const extractedErrors = result.error.flatten().fieldErrors
-        throw new ApiError(422, "Recieved data is not valid", extractedErrors);
+      return next(
+        new ApiError(422, "Validation failed in payload.", result.error.flatten().fieldErrors)
+      );
     }
     next();
-}
+  };
